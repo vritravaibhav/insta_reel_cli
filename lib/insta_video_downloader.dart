@@ -5,20 +5,20 @@ import 'dart:convert';
 // ==============================================================================
 // CONFIGURATION
 // ==============================================================================
-const String DEFAULT_SHORTCODE = 'DOddmpskl5Z'; // Default for testing
+const String defaultShortcode = 'DOddmpskl5Z'; // Default for testing
 
 // User's provided cookie
-const String COOKIE =
+const String cookie =
     'csrftoken=aRv0kba2VEd3GD6ZkabCam; datr=GyGQaXeNGFH_-S7UYbQUDPl7; ig_did=CCCE129C-0329-4678-AD28-8680125A89F8; dpr=1.25; mid=aZAhGwALAAGYfG-QzwwCdV_d_BlP; ig_nrcb=1; ps_l=1; ps_n=1; wd=587x730';
 
-const String USER_AGENT =
+const String userAgent =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36';
 // ==============================================================================
 
 void main(List<String> args) async {
-  String targetShortcode = DEFAULT_SHORTCODE;
+  String targetShortcode = defaultShortcode;
   String initialUrl =
-      'https://www.instagram.com/reel/$DEFAULT_SHORTCODE/'; // Default URL
+      'https://www.instagram.com/reel/$defaultShortcode/'; // Default URL
 
   if (args.isNotEmpty) {
     final input = args[0];
@@ -41,7 +41,7 @@ void main(List<String> args) async {
   print('=============================================');
   print('Target URL: $initialUrl');
   print('Target Shortcode: $targetShortcode');
-  print('Cookies: ${COOKIE.isNotEmpty ? "Provided" : "None"}');
+  print('Cookies: ${cookie.isNotEmpty ? "Provided" : "None"}');
 
   String? finalVideoUrl;
   final client = http.Client();
@@ -62,69 +62,67 @@ void main(List<String> args) async {
     'Sec-Fetch-Site': 'none',
     'Sec-Fetch-User': '?1',
     'Upgrade-Insecure-Requests': '1',
-    'User-Agent': USER_AGENT,
+    'User-Agent': userAgent,
   };
 
-  if (COOKIE.isNotEmpty) {
-    headers['Cookie'] = COOKIE;
+  if (cookie.isNotEmpty) {
+    headers['Cookie'] = cookie;
   }
 
   // ==============================================================================
   // Strategy 1: Main Page Extraction
   // ==============================================================================
-  if (finalVideoUrl == null) {
-    print('\n[1] Strategy: Parsing Main Page HTML...');
-    final url = initialUrl;
+  print('\n[1] Strategy: Parsing Main Page HTML...');
+  final url = initialUrl;
 
-    try {
-      final response = await client.get(Uri.parse(url), headers: headers);
-      if (response.statusCode == 200) {
-        final body = response.body;
+  try {
+    final response = await client.get(Uri.parse(url), headers: headers);
+    if (response.statusCode == 200) {
+      final body = response.body;
 
-        // Debug Save
-        await File('debug_main_page.html').writeAsString(body);
+      // Debug Save
+      await File('debug_main_page.html').writeAsString(body);
 
-        // Check 1: Open Graph Video
-        final ogVideoMatch = RegExp(
-          r'<meta property="og:video" content="(.*?)" />',
-        ).firstMatch(body);
-        if (ogVideoMatch != null) {
-          finalVideoUrl = ogVideoMatch.group(1);
-          print('Success: Found video_url in og:video tag.');
-        }
-
-        // Check 2: SharedData Regex
-        if (finalVideoUrl == null) {
-          final regex = RegExp(r'"video_url"\s*:\s*"(.*?)"');
-          final match = regex.firstMatch(body);
-          if (match != null) {
-            finalVideoUrl = match.group(1);
-            print('Success: Found video_url in page JSON.');
-          }
-        }
-
-        // Check 3: video_versions (Robust Fallback)
-        if (finalVideoUrl == null) {
-          final vVersionsMatch = RegExp(
-            r'"video_versions"\s*:\s*\[(.*?)\]',
-          ).firstMatch(body);
-          if (vVersionsMatch != null) {
-            final vVersionsContent = vVersionsMatch.group(1)!;
-            final urlMatch = RegExp(
-              r'"url"\s*:\s*"(.*?)"',
-            ).firstMatch(vVersionsContent);
-            if (urlMatch != null) {
-              finalVideoUrl = urlMatch.group(1);
-              print('Success: Found video_url in video_versions.');
-            }
-          }
-        }
-      } else {
-        print('Main Page returned status: ${response.statusCode}');
+      // Check 1: Open Graph Video
+      final ogVideoMatch = RegExp(
+        r'<meta property="og:video" content="(.*?)" />',
+      ).firstMatch(body);
+      if (ogVideoMatch != null) {
+        finalVideoUrl = ogVideoMatch.group(1);
+        print('Success: Found video_url in og:video tag.');
       }
-    } catch (e) {
-      print('Error in Main Page strategy: $e');
+
+      // Check 2: SharedData Regex
+      if (finalVideoUrl == null) {
+        final regex = RegExp(r'"video_url"\s*:\s*"(.*?)"');
+        final match = regex.firstMatch(body);
+        if (match != null) {
+          finalVideoUrl = match.group(1);
+          print('Success: Found video_url in page JSON.');
+        }
+      }
+
+      // Check 3: video_versions (Robust Fallback)
+      if (finalVideoUrl == null) {
+        final vVersionsMatch = RegExp(
+          r'"video_versions"\s*:\s*\[(.*?)\]',
+        ).firstMatch(body);
+        if (vVersionsMatch != null) {
+          final vVersionsContent = vVersionsMatch.group(1)!;
+          final urlMatch = RegExp(
+            r'"url"\s*:\s*"(.*?)"',
+          ).firstMatch(vVersionsContent);
+          if (urlMatch != null) {
+            finalVideoUrl = urlMatch.group(1);
+            print('Success: Found video_url in video_versions.');
+          }
+        }
+      }
+    } else {
+      print('Main Page returned status: ${response.statusCode}');
     }
+  } catch (e) {
+    print('Error in Main Page strategy: $e');
   }
 
   // ==============================================================================
@@ -203,7 +201,7 @@ void main(List<String> args) async {
   // ==============================================================================
 
   if (finalVideoUrl != null) {
-    finalVideoUrl = finalVideoUrl!
+    finalVideoUrl = finalVideoUrl
         .replaceAll(r'\u0026', '&')
         .replaceAll(r'\/', '/') // Handle single escaped (common in JSON)
         .replaceAll(r'\\/', '/'); // Handle double escaped (safe fallback)
@@ -215,7 +213,7 @@ void main(List<String> args) async {
       print('Starting request to: $finalVideoUrl');
       // Use authenticated client for download
       final videoResponse = await client.get(
-        Uri.parse(finalVideoUrl!),
+        Uri.parse(finalVideoUrl),
         headers: headers,
       );
       print('Response received (Status: ${videoResponse.statusCode})');
