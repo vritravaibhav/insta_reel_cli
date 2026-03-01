@@ -1,5 +1,5 @@
 name: insta_video_downloader
-description: A sample command-line application.
+description: A command-line tool to download Instagram Reels and Videos directly from the terminal.
 version: 1.0.0
 # repository: https://github.com/my_org/my_repo
 homepage: https://github.com/vritravaibhav/insta_reel_cli
